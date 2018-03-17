@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\TileUtil\TileUtil.csproj"/>
+  </ItemGroup>
+  <ItemGroup>
+    <!--<PackageReference Include="CoreCompat.System.Drawing.v2" Version="*"/>-->
+  </ItemGroup>
+</Project>
