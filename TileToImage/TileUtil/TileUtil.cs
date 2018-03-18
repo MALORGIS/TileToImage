@@ -102,12 +102,12 @@ namespace TileUtil
 
       var resolution = RESOLUTION[level];
 
-      var unitH = PX_COL * resolution;
-      var unitW = PX_ROW * resolution;
+      var unitH = PX_ROW * resolution;
+      var unitW = PX_COL * resolution;
 
       //ex: 原点と矩形の距離差 / (256px×解像度 = 1タイルあたりの距離) = 行列
-      var minxtile = (int)Math.Ceiling((mapExtent.XMin - ORG_X) / unitW);
-      var minytile = (int)Math.Ceiling((ORG_Y - mapExtent.YMax) / unitH);
+      var minxtile = (int)Math.Floor((mapExtent.XMin - ORG_X) / unitW);
+      var minytile = (int)Math.Floor((ORG_Y - mapExtent.YMax) / unitH);
       var maxxtile = (int)Math.Ceiling((mapExtent.XMax - ORG_X) / unitW);
       var maxytile = (int)Math.Ceiling((ORG_Y - mapExtent.YMin) / unitH);
       //縦横のタイルで回す
@@ -121,11 +121,13 @@ namespace TileUtil
           tileInfo.Row = iRow;
 
           tileInfo.Url = tileUrl.GetUrl(level, iRow, iCol);
+
+          var mapX = ORG_X + (unitH * iCol);
+          var mapY = ORG_Y - (unitW * iRow);
           //四隅座標をセット
-          tileInfo.WebMercatorExtent = new Extent(iCol * resolution,
-                                                  iRow * resolution,
-                                                  iCol * resolution + unitW,
-                                                  iRow * resolution + unitH);
+          tileInfo.WebMercatorExtent = new Extent(mapX,  mapY,
+                                                  mapX + unitW,
+                                                  mapY + unitH);
           //タイル情報の返却
           yield return tileInfo;
         }//end loop row
