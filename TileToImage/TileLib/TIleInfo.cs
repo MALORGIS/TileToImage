@@ -1,5 +1,5 @@
 
-namespace TileUtil
+namespace TileLib
 {
   /// <summary>
   /// タイル情報の保持用クラス

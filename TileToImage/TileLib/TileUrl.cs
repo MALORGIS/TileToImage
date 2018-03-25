@@ -1,11 +1,12 @@
 
 
-namespace TileUtil
+namespace TileLib
 {
 
   /// <summary>
   /// マップタイルURLの生成用
   /// https://ほげほげ//{level}/{col}/{row}.jpgのようなURL生成
+  /// これで扱えない場合はクラス継承を
   /// </summary>
   public class TileUrl
   {

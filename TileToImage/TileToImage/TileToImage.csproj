@@ -4,9 +4,11 @@
     <TargetFramework>netcoreapp2.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="CaptchaGen.NetCore" Version="1.0.2" />
+    <PackageReference Include="CommandLineParser" Version="2.2.1" />
+    <PackageReference Include="CoreCompat.System.Drawing.v2" Version="5.2.0-preview1-r131" />
+    <PackageReference Include="Csv" Version="1.0.29" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\TileUtil\TileUtil.csproj" />
+    <ProjectReference Include="..\TileLib\TileLib.csproj" />
   </ItemGroup>
 </Project>

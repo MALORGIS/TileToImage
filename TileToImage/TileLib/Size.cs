@@ -1,6 +1,6 @@
 
 
-namespace TileUtil
+namespace TileLib
 {
 
   /// <summary>

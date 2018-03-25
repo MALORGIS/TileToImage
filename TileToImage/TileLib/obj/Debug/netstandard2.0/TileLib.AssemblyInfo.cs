@@ -11,12 +11,12 @@
 using System;
 using System.Reflection;
 
-[assembly: System.Reflection.AssemblyCompanyAttribute("TileUtil")]
+[assembly: System.Reflection.AssemblyCompanyAttribute("TileLib")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
 [assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
-[assembly: System.Reflection.AssemblyProductAttribute("TileUtil")]
-[assembly: System.Reflection.AssemblyTitleAttribute("TileUtil")]
+[assembly: System.Reflection.AssemblyProductAttribute("TileLib")]
+[assembly: System.Reflection.AssemblyTitleAttribute("TileLib")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
 
 // MSBuild WriteCodeFragment クラスによって生成されました。

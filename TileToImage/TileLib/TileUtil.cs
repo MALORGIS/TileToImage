@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace TileUtil
+namespace TileLib
 {
   /// <summary>
   /// メッシュ集約処理の呼び出し用クラス

@@ -1,5 +1,5 @@
 
-namespace TileUtil
+namespace TileLib
 {
   /// <summary>
   /// 4隅座標の保持用クラス

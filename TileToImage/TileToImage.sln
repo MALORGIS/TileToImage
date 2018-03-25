@@ -4,7 +4,7 @@ VisualStudioVersion = 15.0.27130.2027
 MinimumVisualStudioVersion = 15.0.26124.0
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TileToImage", "TileToImage\TileToImage.csproj", "{839F69A4-1E9C-4673-A431-D8970F813513}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TileUtil", "TileUtil\TileUtil.csproj", "{BBC5C34F-C734-4D7F-B491-C8D0A5A048A4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TileLib", "TileLib\TileLib.csproj", "{BBC5C34F-C734-4D7F-B491-C8D0A5A048A4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
