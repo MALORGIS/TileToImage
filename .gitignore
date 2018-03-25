@@ -7,14 +7,14 @@
 /TileToImage/TileToImage/obj/TileToImage.csproj.nuget.cache
 /TileToImage/TileToImage/obj/TileToImage.csproj.nuget.g.props
 /TileToImage/TileToImage/obj/TileToImage.csproj.nuget.g.targets
-/TileToImage/TileUtil/bin
-/TileToImage/TileUtil/obj/project.assets.json
-/TileToImage/TileUtil/obj/TileUtil.csproj.nuget.cache
-/TileToImage/TileUtil/obj/TileUtil.csproj.nuget.g.props
-/TileToImage/TileUtil/obj/TileUtil.csproj.nuget.g.targets
-/TileToImage/TileUtil/obj/Debug/netstandard2.0/*.cache
-/TileToImage/TileUtil/obj/Debug/netstandard2.0/*.txt
-/TileToImage/TileUtil/obj/Debug/netstandard2.0/*.dll
-/TileToImage/TileUtil/obj/Debug/netstandard2.0/*.pdb
+/TileToImage/TileLib/bin
+/TileToImage/TileLib/obj/project.assets.json
+/TileToImage/TileLib/obj/TileLib.csproj.nuget.cache
+/TileToImage/TileLib/obj/TileLib.csproj.nuget.g.props
+/TileToImage/TileLib/obj/TileLib.csproj.nuget.g.targets
+/TileToImage/TileLib/obj/Debug/netstandard2.0/*.cache
+/TileToImage/TileLib/obj/Debug/netstandard2.0/*.txt
+/TileToImage/TileLib/obj/Debug/netstandard2.0/*.dll
+/TileToImage/TileLib/obj/Debug/netstandard2.0/*.pdb
 
 /TileToImage/TileToImage/obj/Debug/netcoreapp2.0/*.CopyComplete
