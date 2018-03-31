@@ -1,6 +1,8 @@
 ﻿
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -177,8 +179,7 @@ namespace TileToImage
     {
       var tileUtil = this._tileUtil;
       var infos = tileUtil.ExtentToTileInfo(level, ext);
-
-
+      
       PixelFormat pxFormat = PixelFormat.Format8bppIndexed;
       ColorPalette palette = null;
 
@@ -194,6 +195,17 @@ namespace TileToImage
                             $"{ext.XMin}{Environment.NewLine}" +
                             $"{ext.YMax}";
 
+      var cList = infos.Select(i => i.Col).Distinct().ToList();
+      var rList = infos.Select(i => i.Row).Distinct().ToList();
+
+      var col = cList[cList.Count / 2];
+      var row = rList[rList.Count / 2];
+
+      var crinfo = infos.Where(i => i.Col == col && i.Row == row).FirstOrDefault();
+      
+      var cx = (int)Math.Floor((crinfo.WebMercatorExtent.XMin - ext.XMin) * dx);
+      var cy = (int)Math.Floor((ext.YMax - crinfo.WebMercatorExtent.YMin) * dy);
+
 
       //一旦最初の画像を取ってピクセルフォーマットを取得
       using (WebClient client = new WebClient())
@@ -204,18 +216,18 @@ namespace TileToImage
         palette = tile.Palette;
       }//end io
 
-      //インデックス系だとGraphicsが動作しないので仕方なし
-      //インデックス系を扱う場合はExportIndexを使用
-      if (pxFormat != PixelFormat.Format8bppIndexed && pxFormat != PixelFormat.Format4bppIndexed)
-      {
-        throw new Exception("Not 4/8bppIndexed");
-      }
+      ////インデックス系だとGraphicsが動作しないので仕方なし
+      ////インデックス系を扱う場合はExportIndexを使用
+      //if (pxFormat != PixelFormat.Format8bppIndexed && pxFormat != PixelFormat.Format4bppIndexed)
+      //{
+      //  throw new Exception("Not 4/8bppIndexed");
+      //}
 
       var img = new Bitmap(size.Width, size.Height, PixelFormat.Format8bppIndexed);
 
       //パレットにセットするための色のリストを準備
-      var colors = this.Colors;
-      if (colors == null)
+      var colors = new List<Color>( this.Colors );
+      if (this.Colors == null)
       {
         colors = new List<Color>(palette.Entries);
         this.Colors = colors;
@@ -244,9 +256,13 @@ namespace TileToImage
             ////サーバに負荷を掛けないよう待機
             //Thread.Sleep(1000);
 
-            var tileExt = info.WebMercatorExtent;
-            var x = (int)Math.Floor((tileExt.XMin - ext.XMin) * dx);
-            var y = (int)Math.Floor((ext.YMax - tileExt.YMin) * dy);
+            //var tileExt = info.WebMercatorExtent;
+            //var x = (int)Math.Floor((tileExt.XMin - ext.XMin) * dx);
+            //var y = (int)Math.Floor((ext.YMax - tileExt.YMin) * dy);
+
+            var x = cx + (256 * (info.Col - crinfo.Col));
+            var y = cy + (256 * (info.Row - crinfo.Row));
+
 
             //全体サイズよりXYがでかい場合戻す
             if (size.Width < x)//(size.Height < y || size.Width < x)
@@ -302,27 +318,28 @@ namespace TileToImage
                 //ロックする
                 try
                 {
+                  var tilePx = tile.PixelFormat;
+
                   //RectでカットしてもScan0は同配列の模様
                   //var tiledata = tile.LockBits(new Rectangle(tileX, tileY, tileW, tileH), ImageLockMode.ReadOnly, pxFormat);
-                  var tiledata = tile.LockBits(new Rectangle(0, 0, tw, th), ImageLockMode.ReadOnly, tile.PixelFormat);
+                  var tiledata = tile.LockBits(new Rectangle(0, 0, tw, th), ImageLockMode.ReadOnly, tilePx);
 
                   //byte[] tileBytes = new byte[tiledata.Height * tiledata.Width];
                   byte[] tileBytes = new byte[tiledata.Height * tiledata.Stride];
                   Marshal.Copy(tiledata.Scan0, tileBytes, 0, tileBytes.Length);
 
+                  var tstride = tiledata.Stride;
+
                   //カラーマップに応じた書き換え
-                  if (tile.PixelFormat == PixelFormat.Format8bppIndexed)
+                  if (tilePx == PixelFormat.Format8bppIndexed)
                   {
                     tileBytes = Array.ConvertAll<byte, byte>(tileBytes, new Converter<byte, byte>(i =>
                      {
                        return (byte)colorMap[(int)i];
                      }));
-                  }//end if
-
-                  var tstride = tiledata.Stride;
-
+                  }
                   //4bit indexの場合は分割
-                  if (tile.PixelFormat == PixelFormat.Format4bppIndexed)
+                  else if (tilePx == PixelFormat.Format4bppIndexed)
                   {
                     tstride = tstride * 2;
                     List<byte> newData = new List<byte>(tiledata.Height * tstride);
@@ -339,6 +356,57 @@ namespace TileToImage
                     }
                     tileBytes = newData.ToArray();
                   }//end if
+                  //2bit inndexは32bppArgbになってしまう
+                  else if (tilePx == PixelFormat.Format32bppArgb)
+                  {
+                    var step = tstride / tiledata.Width;
+                    tstride = tiledata.Width;
+
+                    List<byte> newData = new List<byte>(tiledata.Height * tiledata.Width);
+                    for (int i = 0; i < tileBytes.Length; i = i + step)
+                    {
+                      var a = (int)tileBytes[i + 3];
+                      var r = (int)tileBytes[i + 2];
+                      var g = (int)tileBytes[i + 1];
+                      var b = (int)tileBytes[i + 0];
+
+                      var c = Color.FromArgb(a, r, g, b);
+
+                      var colorIndex = colors.IndexOf(c);
+                      if (colorIndex < 0)
+                      {
+                        colorIndex = colors.Count;
+                        colors.Add(c);
+                      }//end if
+                      newData.Add((byte)colorIndex);
+                    }//end loop
+                    tileBytes = newData.ToArray();
+                  }
+                  else if (tilePx == PixelFormat.Format1bppIndexed)
+                  {
+                    tstride = tiledata.Width;
+                    List<byte> newData = new List<byte>(tiledata.Height * tstride);
+                    for (int i = 0; i < tileBytes.Length; i++)
+                    {
+                      var b = tileBytes[i];
+                      
+                      for (int bi = 0; bi < 8; bi++)
+                      {
+                        if ((b & (1 << bi)) != 0){ 
+                          newData.Add((byte)colorMap[1]);
+                        } else {
+                          newData.Add((byte)colorMap[0]);
+                        }
+                      }
+                    }
+                    tileBytes = newData.ToArray();
+
+                  }
+                  else
+                  {
+                    Debug.Print(tilePx.ToString("G"));
+                  }
+
 
                   //for (int i = 0; i < tileBytes.Length; i++)
                   //{
@@ -401,10 +469,18 @@ namespace TileToImage
             }
 
           }//end loop
-
-
+          
+          
           var newPalette = img.Palette;
-          Array.Copy(colors.ToArray(), newPalette.Entries, colors.Count);
+          //色数が多い際は切り捨て
+          var colorCount = colors.Count;
+          if (newPalette.Entries.Length < colors.Count)
+          {
+            Console.WriteLine("color over");
+            colorCount = newPalette.Entries.Length;
+          }
+
+          Array.Copy(colors.ToArray(), newPalette.Entries, colorCount);
           img.Palette = newPalette;
           
 
@@ -417,8 +493,11 @@ namespace TileToImage
         img.UnlockBits(data);
 
       }
-      catch
+      catch (Exception ex)
       {
+        Debug.Print(ex.Message);
+        Debug.Print(ex.StackTrace);
+
         if (img != null)
         {
           img.Dispose();
