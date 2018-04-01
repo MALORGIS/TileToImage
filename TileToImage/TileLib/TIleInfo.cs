@@ -4,7 +4,7 @@ namespace TileLib
   /// <summary>
   /// タイル情報の保持用クラス
   /// </summary>
-  public class TIleInfo
+  public class TileInfo
   {
     /// <summary>
     /// 縮尺レベル

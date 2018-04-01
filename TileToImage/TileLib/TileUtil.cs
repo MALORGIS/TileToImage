@@ -56,12 +56,12 @@ namespace TileLib
     /// <summary>
     /// 原点 ( タイル0,0 )のX座標
     /// </summary>
-    private const double ORG_X = -20037508.342787;
+    private static readonly double ORG_X = -1 * (2 * GEO_R * Math.PI / 2);
 
     /// <summary>
     /// 原点 ( タイル0,0 )のY座標
     /// </summary>
-    private const double ORG_Y = 20037508.342787;
+    private static readonly double ORG_Y = (2 * GEO_R * Math.PI / 2);
 
     /// <summary>
     /// タイル画像の縦px数
@@ -96,7 +96,7 @@ namespace TileLib
     /// <param name="level">指定レベル</param>
     /// <param name="extent">Webメルカトル範囲</param>
     /// <returns>タイル情報列挙</returns>
-    public IEnumerable<TIleInfo> ExtentToTileInfo(int level, Extent mapExtent)
+    public IEnumerable<TileInfo> ExtentToTileInfo(int level, Extent mapExtent)
     {
       var tileUrl = this._tileUrl;
 
@@ -115,7 +115,7 @@ namespace TileLib
       {
         for (var iRow = minytile; iRow < maxytile + 1; iRow++)
         {
-          var tileInfo = new TIleInfo();
+          var tileInfo = new TileInfo();
           tileInfo.Level = level;
           tileInfo.Col = iCol;
           tileInfo.Row = iRow;
