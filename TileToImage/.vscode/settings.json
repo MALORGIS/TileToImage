@@ -1,0 +1,17 @@
+{
+  //エディター設定
+  "editor.renderWhitespace": "all",
+  "editor.renderControlCharacters": true,
+  "editor.tabSize": 2,
+  "editor.formatOnSave": true,
+  /** ファイル除外設定 */
+  "files.exclude": {
+    "**/.git": true,
+    "**/.svn": true,
+    "**/.hg": true,
+    "**/CVS": true,
+    "**/.DS_Store": true,
+    "TileToImage/bin": true,
+    "TileUtil/bin": true
+  }
+}
