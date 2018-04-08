@@ -1,7 +1,4 @@
 ﻿using CommandLine;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace TileToImage
 {
@@ -56,14 +53,20 @@ namespace TileToImage
     [Option('d', "outdir", Required = true, HelpText = "output directory.")]
     public string OutDir { get; set; }
 
-
+    /// <summary>
+    /// 出力フォーマット
+    /// </summary>
     [Option("format", Required = false, Default =".png", HelpText = ".png/.jpg image format.")]
     public string ImageFormat { get; set; }
 
-
+    /// <summary>
+    /// 8bit pngとして出力
+    /// </summary>
     [Option('b',"bit8", Required = false, Default = false, HelpText = "8bit png.")]
     public bool Bit8 { get; set; }
 
+
+    
   }//end class
 
 }//end namespace

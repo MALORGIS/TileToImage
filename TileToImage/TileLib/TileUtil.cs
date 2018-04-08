@@ -16,42 +16,7 @@ namespace TileLib
     /// WGS84 地球半径
     /// </summary>
     const double GEO_R = 6378137;
-
-    /// <summary>
-    /// 1pxあたりの距離 [m] EPSG:3857投影時
-    /// 地球の円周長 (2×半径×π)を 256px としたのがL0
-    /// L0から四分木
-    /// </summary>
-    /// <returns></returns>
-    private static readonly Dictionary<int, double> RESOLUTION = new Dictionary<int, double>() {
-      { 0, 2 * GEO_R * Math.PI / PX_COL / Math.Pow(2,  0) },
-      { 1, 2 * GEO_R * Math.PI / PX_COL / Math.Pow(2,  1) },
-      { 2, 2 * GEO_R * Math.PI / PX_COL / Math.Pow(2,  2) },
-      { 3, 2 * GEO_R * Math.PI / PX_COL / Math.Pow(2,  3) },
-      { 4, 2 * GEO_R * Math.PI / PX_COL / Math.Pow(2,  4) },
-      { 5, 2 * GEO_R * Math.PI / PX_COL / Math.Pow(2,  5) },
-      { 6, 2 * GEO_R * Math.PI / PX_COL / Math.Pow(2,  6) },
-      { 7, 2 * GEO_R * Math.PI / PX_COL / Math.Pow(2,  7) },
-      { 8, 2 * GEO_R * Math.PI / PX_COL / Math.Pow(2,  8) },
-      { 9, 2 * GEO_R * Math.PI / PX_COL / Math.Pow(2,  9) },
-      {10, 2 * GEO_R * Math.PI / PX_COL / Math.Pow(2, 10) },
-      {11, 2 * GEO_R * Math.PI / PX_COL / Math.Pow(2, 11) },
-      {12, 2 * GEO_R * Math.PI / PX_COL / Math.Pow(2, 12) },
-      {13, 2 * GEO_R * Math.PI / PX_COL / Math.Pow(2, 13) },
-      {14, 2 * GEO_R * Math.PI / PX_COL / Math.Pow(2, 14) },
-      {15, 2 * GEO_R * Math.PI / PX_COL / Math.Pow(2, 15) },
-      {16, 2 * GEO_R * Math.PI / PX_COL / Math.Pow(2, 16) },
-      {17, 2 * GEO_R * Math.PI / PX_COL / Math.Pow(2, 17) },
-      {18, 2 * GEO_R * Math.PI / PX_COL / Math.Pow(2, 18) },
-      {19, 2 * GEO_R * Math.PI / PX_COL / Math.Pow(2, 19) },
-      {20, 2 * GEO_R * Math.PI / PX_COL / Math.Pow(2, 20) },
-      {21, 2 * GEO_R * Math.PI / PX_COL / Math.Pow(2, 21) },
-      {22, 2 * GEO_R * Math.PI / PX_COL / Math.Pow(2, 22) },
-      {23, 2 * GEO_R * Math.PI / PX_COL / Math.Pow(2, 23) },
-      {24, 2 * GEO_R * Math.PI / PX_COL / Math.Pow(2, 24) },
-      {25, 2 * GEO_R * Math.PI / PX_COL / Math.Pow(2, 25) },
-      {26, 2 * GEO_R * Math.PI / PX_COL / Math.Pow(2, 26) },
-    };
+    
 
     /// <summary>
     /// 原点 ( タイル0,0 )のX座標
@@ -100,7 +65,7 @@ namespace TileLib
     {
       var tileUrl = this._tileUrl;
 
-      var resolution = RESOLUTION[level];
+      var resolution = this.getResolution(level);
 
       var unitH = PX_ROW * resolution;
       var unitW = PX_COL * resolution;
@@ -110,10 +75,15 @@ namespace TileLib
       var minytile = (int)Math.Floor((ORG_Y - mapExtent.YMax) / unitH);
       var maxxtile = (int)Math.Ceiling((mapExtent.XMax - ORG_X) / unitW);
       var maxytile = (int)Math.Ceiling((ORG_Y - mapExtent.YMin) / unitH);
+      if (minxtile == maxxtile)
+        maxxtile++;
+      if (minytile == maxytile)
+        maxytile++;
+        
       //縦横のタイルで回す
-      for (var iCol = minxtile; iCol < maxxtile + 1; iCol++)
+      for (var iCol = minxtile; iCol < maxxtile; iCol++)
       {
-        for (var iRow = minytile; iRow < maxytile + 1; iRow++)
+        for (var iRow = minytile; iRow < maxytile; iRow++)
         {
           var tileInfo = new TileInfo();
           tileInfo.Level = level;
@@ -125,9 +95,9 @@ namespace TileLib
           var mapX = ORG_X + (unitH * iCol);
           var mapY = ORG_Y - (unitW * iRow);
           //四隅座標をセット
-          tileInfo.WebMercatorExtent = new Extent(mapX,  mapY,
+          tileInfo.WebMercatorExtent = new Extent(mapX,  mapY - unitH,
                                                   mapX + unitW,
-                                                  mapY + unitH);
+                                                  mapY);
           //タイル情報の返却
           yield return tileInfo;
         }//end loop row
@@ -144,11 +114,21 @@ namespace TileLib
     /// <returns>PXサイズ</returns>
     public Size CalcPxSize(int level, Extent mapExtent)
     {
-        var resolution = RESOLUTION[level];
+        var resolution = this.getResolution(level);
         var width = (int)Math.Ceiling(mapExtent.Width / resolution);
         var height = (int)Math.Ceiling(mapExtent.Height / resolution);
 
         return new Size(width, height);
+    }//end method
+
+    /// <summary>
+    /// pxあたりのm数返却
+    /// </summary>
+    /// <param name="level"></param>
+    /// <returns></returns>
+    private double getResolution(int level)
+    {
+      return 2 * GEO_R * Math.PI / PX_COL / Math.Pow(2, level);
     }//end method
 
 

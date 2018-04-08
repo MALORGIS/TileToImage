@@ -103,6 +103,12 @@ namespace TileToImage
     }//end method
 
 
+    /// <summary>
+    /// インデックスカラー画像の出力
+    /// </summary>
+    /// <param name="ext"></param>
+    /// <param name="level"></param>
+    /// <returns></returns>
     public ExportResult Export8bppIndexed(Extent ext, int level)
     {
       var tileUtil = this._tileUtil;
@@ -124,37 +130,21 @@ namespace TileToImage
         palette = tile.Palette;
       }//end io
 
-      // var dx = size.Width / ext.Width;
-      // var dy = size.Height / ext.Height;
-
-      // var esriWorldFile = $"{ext.Width / size.Width}{Environment.NewLine}" +
-      //                       $"0{Environment.NewLine}" +
-      //                       $"0{Environment.NewLine}" +
-      //                       $"{(ext.Height / size.Height) * -1}{Environment.NewLine}" +
-      //                       $"{ext.XMin}{Environment.NewLine}" +
-      //                       $"{ext.YMax}";
-
-      // var cList = infos.Select(i => i.Col).Distinct().ToList();
-      // var rList = infos.Select(i => i.Row).Distinct().ToList();
-
-      // var col = cList[cList.Count / 2];
-      // var row = rList[rList.Count / 2];
-
-      // var crinfo = infos.Where(i => i.Col == col && i.Row == row).FirstOrDefault();
-      
-      // var cx = (int)Math.Floor((crinfo.WebMercatorExtent.XMin - ext.XMin) * dx);
-      // var cy = (int)Math.Floor((ext.YMax - crinfo.WebMercatorExtent.YMin) * dy);
-
-      var img = new Bitmap(size.Width, size.Height, PixelFormat.Format8bppIndexed);
-
       //パレットにセットするための色のリストを準備
-      var colors = new List<Color>( this.Colors );
+      List<Color> colors = null;
       if (this.Colors == null)
       {
         colors = new List<Color>(palette.Entries);
         this.Colors = colors;
+      }
+      else
+      {
+        colors = new List<Color>(this.Colors);
       }//end if
 
+
+      //返却画像の用意
+      var img = new Bitmap(size.Width, size.Height, PixelFormat.Format8bppIndexed);
       string esriWorldFile = null;
 
       try
@@ -164,8 +154,9 @@ namespace TileToImage
         var data = img.LockBits(new Rectangle(0, 0, img.Width, img.Height), ImageLockMode.WriteOnly, img.PixelFormat);
 
         //バイト配列の取得
-        byte[] bytes = new byte[data.Height * data.Stride];
+        var bytes = new byte[data.Height * data.Stride];
         Marshal.Copy(data.Scan0, bytes, 0, bytes.Length);
+
 
         esriWorldFile = this.exportImage(ext, (tileParams) =>
         {
@@ -218,107 +209,13 @@ namespace TileToImage
             //はみ出ているばあいはけずる
             tileW = tileW - tileX;
             tileH = tileH - tileY;
-            // var tileH = y < 0 ? th + y :th;
-            // var tileY = y < 0 ? 0 : y;
 
             //ロックする
             try
             {
-              var tilePx = tile.PixelFormat;
-
-              //RectでカットしてもScan0は同配列の模様
-              //var tiledata = tile.LockBits(new Rectangle(tileX, tileY, tileW, tileH), ImageLockMode.ReadOnly, pxFormat);
-              var tiledata = tile.LockBits(new Rectangle(0, 0, tw, th), ImageLockMode.ReadOnly, tilePx);
-
-              //byte[] tileBytes = new byte[tiledata.Height * tiledata.Width];
-              byte[] tileBytes = new byte[tiledata.Height * tiledata.Stride];
-              Marshal.Copy(tiledata.Scan0, tileBytes, 0, tileBytes.Length);
-
-              var tstride = tiledata.Stride;
-
-              //カラーマップに応じた書き換え
-              if (tilePx == PixelFormat.Format8bppIndexed)
-              {
-                tileBytes = Array.ConvertAll<byte, byte>(tileBytes, new Converter<byte, byte>(i =>
-                  {
-                    return (byte)colorMap[(int)i];
-                  }));
-              }
-              //4bit indexの場合は分割
-              else if (tilePx == PixelFormat.Format4bppIndexed)
-              {
-                tstride = tstride * 2;
-                List<byte> newData = new List<byte>(tiledata.Height * tstride);
-                for (int i = 0; i < tileBytes.Length; i++)
-                {
-                  var b = tileBytes[i];
-                  var high_bits = b >> 4;
-                  var low_bits = b & 15;
-                  high_bits = colorMap[high_bits];
-                  low_bits = colorMap[low_bits];
-
-                  newData.Add((byte)high_bits);
-                  newData.Add((byte)low_bits);
-                }
-                tileBytes = newData.ToArray();
-              }//end if
-              //2bit inndexは32bppArgbになってしまう
-              else if (tilePx == PixelFormat.Format32bppArgb)
-              {
-                var step = tstride / tiledata.Width;
-                tstride = tiledata.Width;
-
-                List<byte> newData = new List<byte>(tiledata.Height * tiledata.Width);
-                for (int i = 0; i < tileBytes.Length; i = i + step)
-                {
-                  var a = (int)tileBytes[i + 3];
-                  var r = (int)tileBytes[i + 2];
-                  var g = (int)tileBytes[i + 1];
-                  var b = (int)tileBytes[i + 0];
-
-                  var c = Color.FromArgb(a, r, g, b);
-
-                  var colorIndex = colors.IndexOf(c);
-                  if (colorIndex < 0)
-                  {
-                    colorIndex = colors.Count;
-                    colors.Add(c);
-                  }//end if
-                  newData.Add((byte)colorIndex);
-                }//end loop
-                tileBytes = newData.ToArray();
-              }
-              else if (tilePx == PixelFormat.Format1bppIndexed)
-              {
-                tstride = tiledata.Width;
-                List<byte> newData = new List<byte>(tiledata.Height * tstride);
-                for (int i = 0; i < tileBytes.Length; i++)
-                {
-                  var b = tileBytes[i];
-                  
-                  for (int bi = 0; bi < 8; bi++)
-                  {
-                    if ((b & (1 << bi)) != 0){ 
-                      newData.Add((byte)colorMap[1]);
-                    } else {
-                      newData.Add((byte)colorMap[0]);
-                    }
-                  }
-                }
-                tileBytes = newData.ToArray();
-
-              }
-              else
-              {
-                Debug.Print(tilePx.ToString("G"));
-              }
-
-
-              //for (int i = 0; i < tileBytes.Length; i++)
-              //{
-              //  var b = (int)tileBytes[i];
-              //  tileBytes[i] = (byte)colorMap[b];
-              //}//end loop
+              //タイルデータの取得
+              var tileBytes = this.getTileData(tile, colorMap, colors);
+              var tstride = tw;
 
 
               //幅単位で回る
@@ -343,34 +240,32 @@ namespace TileToImage
                 try
                 {
                   Array.Copy(tileBytes, start, copyBytes, 0, copyBytes.Length);
-
-
                   Array.Copy(copyBytes, 0, bytes, imgStart, copyBytes.Length);
                 }
                 catch (Exception ex)
                 {
-                  Debug.Print(ex.Message);
-                  Debug.Print(ex.StackTrace);
-                  Debug.Print($"Start:{start} Length:{copyBytes.Length}");
-                  Debug.Print($"image:{imgStart}");
+                  Console.Error.WriteLine(ex.Message);
+                  Console.Error.WriteLine(ex.StackTrace);
+                  Console.Error.WriteLine($"Start:{start} Length:{copyBytes.Length}");
+                  Console.Error.WriteLine($"image:{imgStart}");
                 }
               }
 
-              //アンロック
-              tile.UnlockBits(tiledata);
+              ////アンロック
+              //tile.UnlockBits(tiledata);
             }
             catch(Exception ex)
             {
-              Debug.WriteLine(ex.Message);
-              Debug.WriteLine(ex.StackTrace);
-              Debug.WriteLine($"TH:{tileH} TW:{tileW} X:{tileX} Y:{tileY}");
+              Console.Error.WriteLine(ex.Message);
+              Console.Error.WriteLine(ex.StackTrace);
+              Console.Error.WriteLine($"TH:{tileH} TW:{tileW} X:{tileX} Y:{tileY}");
 
             }
             
           }catch (Exception ex)
           {
-            Debug.WriteLine(ex.Message);
-            Debug.WriteLine(ex.StackTrace);
+            Console.Error.WriteLine(ex.Message);
+            Console.Error.WriteLine(ex.StackTrace);
 
           }
 
@@ -411,6 +306,123 @@ namespace TileToImage
       return new ExportResult( img, esriWorldFile);
     }//end method
 
+    /// <summary>
+    /// タイル カラー インデックス配列の取得
+    /// </summary>
+    /// <param name="tile">タイル画像</param>
+    /// <param name="colorMap">カラーマップ</param>
+    /// <param name="colors">カラー配列</param>
+    /// <returns>画像データ配列</returns>
+    private byte[] getTileData(Bitmap tile, Dictionary<int, int> colorMap, List<Color> colors)
+    {
+
+      var tw = tile.Width;
+      var th = tile.Height;
+
+      var tilePx = tile.PixelFormat;
+
+      //RectでカットしてもScan0は同配列の模様
+      //var tiledata = tile.LockBits(new Rectangle(tileX, tileY, tileW, tileH), ImageLockMode.ReadOnly, pxFormat);
+      var tiledata = tile.LockBits(new Rectangle(0, 0, tw, th), ImageLockMode.ReadOnly, tilePx);
+      //アンロック
+      tile.UnlockBits(tiledata);
+
+      //インデックス定型の際はこのまま戻しても..
+      //インデックス不定の際は下記
+
+      //byte[] tileBytes = new byte[tiledata.Height * tiledata.Width];
+      byte[] tileBytes = new byte[tiledata.Height * tiledata.Stride];
+      Marshal.Copy(tiledata.Scan0, tileBytes, 0, tileBytes.Length);
+
+      var tstride = tiledata.Stride;
+
+      //カラーマップに応じた書き換え
+      if (tilePx == PixelFormat.Format8bppIndexed)
+      {
+        tileBytes = Array.ConvertAll<byte, byte>(tileBytes, new Converter<byte, byte>(i =>
+        {
+          return (byte)colorMap[(int)i];
+        }));
+      }
+      //4bit indexの場合は分割
+      else if (tilePx == PixelFormat.Format4bppIndexed)
+      {
+        tstride = tstride * 2;
+        List<byte> newData = new List<byte>(tiledata.Height * tstride);
+        for (int i = 0; i < tileBytes.Length; i++)
+        {
+          var b = tileBytes[i];
+          var high_bits = b >> 4;
+          var low_bits = b & 15;
+          high_bits = colorMap[high_bits];
+          low_bits = colorMap[low_bits];
+
+          newData.Add((byte)high_bits);
+          newData.Add((byte)low_bits);
+        }
+        tileBytes = newData.ToArray();
+      }//end if
+       //2bit inndexは32bppArgbになってしまう
+      else if (tilePx == PixelFormat.Format32bppArgb)
+      {
+        var step = tstride / tiledata.Width;
+        tstride = tiledata.Width;
+
+        List<byte> newData = new List<byte>(tiledata.Height * tiledata.Width);
+        for (int i = 0; i < tileBytes.Length; i = i + step)
+        {
+          var a = (int)tileBytes[i + 3];
+          var r = (int)tileBytes[i + 2];
+          var g = (int)tileBytes[i + 1];
+          var b = (int)tileBytes[i + 0];
+
+          var c = Color.FromArgb(a, r, g, b);
+
+          var colorIndex = colors.IndexOf(c);
+          if (colorIndex < 0)
+          {
+            colorIndex = colors.Count;
+            colors.Add(c);
+          }//end if
+          newData.Add((byte)colorIndex);
+        }//end loop
+        tileBytes = newData.ToArray();
+      }
+      else if (tilePx == PixelFormat.Format1bppIndexed)
+      {
+        tstride = tiledata.Width;
+        List<byte> newData = new List<byte>(tiledata.Height * tstride);
+        for (int i = 0; i < tileBytes.Length; i++)
+        {
+          var b = tileBytes[i];
+
+          for (int bi = 0; bi < 8; bi++)
+          {
+            if ((b & (1 << bi)) != 0)
+            {
+              newData.Add((byte)colorMap[1]);
+            }
+            else
+            {
+              newData.Add((byte)colorMap[0]);
+            }
+          }
+        }
+        tileBytes = newData.ToArray();
+
+      }
+      else
+      {
+        Debug.Print(tilePx.ToString("G"));
+      }
+
+      return tileBytes;
+    }//end method
+
+    
+    /// <summary>
+    /// タイル出力処理の引数
+    /// </summary>
     private class ExportTile
     {
       public Bitmap Tile {get;set;}
@@ -418,6 +430,12 @@ namespace TileToImage
       public int Y {get; set;}
     }
 
+    /// <summary>
+    /// タイルのループ 共通処理
+    /// </summary>
+    /// <param name="ext">範囲</param>
+    /// <param name="tileAction">タイル読み込み後の処理</param>
+    /// <returns>WorldFile文字列</returns>
     private string exportImage(Extent ext, Action<ExportTile> tileAction)
     {
       var tileUtil = this._tileUtil;
